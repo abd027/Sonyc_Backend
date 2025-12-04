@@ -16,8 +16,13 @@ load_dotenv()
 # Setup logging
 logger = logging.getLogger(__name__)
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Password hashing - configure to handle long passwords
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__ident="2b",  # Use bcrypt version 2b
+    bcrypt__rounds=12,   # Standard number of rounds
+)
 
 # JWT settings
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
@@ -34,14 +39,31 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password"""
-    # Bcrypt has a 72-byte limit, so truncate if necessary
-    # This is safe because bcrypt only uses the first 72 bytes anyway
+    """Hash a password - handles bcrypt 72-byte limit"""
+    # Bcrypt has a hard 72-byte limit. Always truncate to 71 bytes to be safe.
+    # This is secure because bcrypt only uses the first 72 bytes anyway.
+    if not isinstance(password, str):
+        password = str(password)
+    
+    # Encode to bytes and truncate if needed
     password_bytes = password.encode('utf-8')
-    if len(password_bytes) > 72:
-        password_bytes = password_bytes[:72]
+    if len(password_bytes) > 71:
+        password_bytes = password_bytes[:71]
         password = password_bytes.decode('utf-8', errors='ignore')
-    return pwd_context.hash(password)
+    
+    # Hash the password - wrap in try/except as final safety
+    try:
+        return pwd_context.hash(password)
+    except ValueError as e:
+        error_str = str(e).lower()
+        # If it's a 72-byte error, truncate more aggressively
+        if "72" in error_str or "bytes" in error_str:
+            # Truncate to 70 bytes
+            password_bytes = password.encode('utf-8')[:70]
+            password = password_bytes.decode('utf-8', errors='ignore')
+            return pwd_context.hash(password)
+        # Re-raise other ValueError
+        raise
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
