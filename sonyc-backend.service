@@ -7,14 +7,14 @@ Requires=network.target
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/home/ubuntu/soya-project/Sonyc_Backend/backend
-Environment="PATH=/home/ubuntu/soya-project/Sonyc_Backend/backend/venv/bin"
+WorkingDirectory=/home/ubuntu/soya-project/Sonyc_Backend
+Environment="PATH=/home/ubuntu/soya-project/Sonyc_Backend/venv/bin"
 
 # Load environment variables from .env file
-EnvironmentFile=/home/ubuntu/soya-project/Sonyc_Backend/backend/.env
+EnvironmentFile=/home/ubuntu/soya-project/Sonyc_Backend/.env
 
 # Main command
-ExecStart=/home/ubuntu/soya-project/Sonyc_Backend/backend/venv/bin/gunicorn app.main:app -c gunicorn_config.py
+ExecStart=/home/ubuntu/soya-project/Sonyc_Backend/venv/bin/gunicorn app.main:app -c gunicorn_config.py
 # Alternative if gunicorn is installed globally:
 # ExecStart=/usr/local/bin/gunicorn app.main:app -c gunicorn_config.py
 

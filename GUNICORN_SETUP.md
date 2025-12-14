@@ -6,10 +6,10 @@ This guide explains how to run your FastAPI backend as a daemon using Gunicorn o
 
 ### Step 1: Install Gunicorn
 
-On your EC2 server, navigate to your backend directory and install gunicorn:
+On your EC2 server, navigate to your project directory and install gunicorn:
 
 ```bash
-cd ~/soya-project/Sonyc_Backend/backend
+cd ~/soya-project/Sonyc_Backend
 source venv/bin/activate  # If using virtual environment
 pip install gunicorn
 ```
@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ### Step 2: Run Setup Script (Easiest)
 
 ```bash
-cd ~/soya-project/Sonyc_Backend/backend
+cd ~/soya-project/Sonyc_Backend
 sudo bash setup-gunicorn-service.sh
 ```
 
@@ -47,7 +47,7 @@ sudo nano /etc/systemd/system/sonyc-backend.service
 ```
 
 Update these paths if different:
-- `WorkingDirectory`: Should point to your backend directory
+- `WorkingDirectory`: Should point to your project directory (where `app` folder is located)
 - `ExecStart`: Path to gunicorn executable
 - `EnvironmentFile`: Path to your `.env` file
 
@@ -100,7 +100,7 @@ sudo systemctl reload sonyc-backend
 If you want a quick solution without systemd:
 
 ```bash
-cd ~/soya-project/Sonyc_Backend/backend
+cd ~/soya-project/Sonyc_Backend
 source venv/bin/activate  # If using virtual environment
 nohup gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 > gunicorn.log 2>&1 &
 ```
@@ -173,7 +173,7 @@ sudo cat /etc/systemd/system/sonyc-backend.service
 
 4. Test gunicorn manually:
 ```bash
-cd ~/soya-project/Sonyc_Backend/backend
+cd ~/soya-project/Sonyc_Backend
 source venv/bin/activate
 gunicorn app.main:app -c gunicorn_config.py
 ```

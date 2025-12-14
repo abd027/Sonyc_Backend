@@ -5,8 +5,9 @@ set -e
 
 echo "🚀 Setting up Gunicorn systemd service for Sonyc Backend..."
 
-# Get the project directory
-PROJECT_DIR="/home/ubuntu/soya-project/Sonyc_Backend/backend"
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_DIR="$SCRIPT_DIR"
 SERVICE_NAME="sonyc-backend"
 
 # Check if running as root or with sudo
@@ -16,8 +17,17 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Navigate to backend directory
+# Navigate to project directory (where the script is)
 cd "$PROJECT_DIR" || { echo "❌ Directory $PROJECT_DIR not found!"; exit 1; }
+
+# Check if app/main.py exists to verify we're in the right directory
+if [ ! -f "app/main.py" ]; then
+    echo "❌ Error: app/main.py not found in $PROJECT_DIR"
+    echo "Please run this script from the directory containing the 'app' folder"
+    exit 1
+fi
+
+echo "✓ Found app directory in: $PROJECT_DIR"
 
 echo "📦 Checking if gunicorn is installed..."
 
@@ -48,7 +58,7 @@ echo "📝 Installing systemd service file..."
 cp "$SERVICE_NAME.service" /etc/systemd/system/
 
 # Update service file paths (replace placeholder if needed)
-sed -i "s|/home/ubuntu/soya-project/Sonyc_Backend/backend|$PROJECT_DIR|g" /etc/systemd/system/"$SERVICE_NAME.service"
+sed -i "s|/home/ubuntu/soya-project/Sonyc_Backend[^ ]*|$PROJECT_DIR|g" /etc/systemd/system/"$SERVICE_NAME.service"
 
 # Update ExecStart with correct gunicorn path
 if [ -f "$VENV_BIN/gunicorn" ]; then
