@@ -10,6 +10,8 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableParallel
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
+from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -66,7 +68,7 @@ app = FastAPI(title="RAG ChatBot API", version="2.0.0")
 
 # CORS middleware
 # Get allowed origins from environment variable or use defaults
-cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001")
+cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://13.49.120.11:3000")
 cors_origins = [origin.strip() for origin in cors_origins_env.split(",")]
 
 app.add_middleware(
@@ -204,10 +206,15 @@ def generate_title(user_query: str) -> str:
     """Generate a concise title (max 5 words) based on user query"""
     try:
         logger.info("Generating title for user query")
-        model = ChatGoogleGenerativeAI(
-            model="gemini-3-pro-preview",
-            temperature=0.3
+        mistralai = HuggingFaceEndpoint(
+            repo_id="meta-llama/Llama-3.1-8B-Instruct",
+            task="conversational",
+            temperature=0.3,
+            streaming=True,
+            huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
         )
+
+        model = ChatHuggingFace(llm=mistralai)
         
         title_prompt = PromptTemplate(
             input_variables=["query"],
@@ -234,11 +241,14 @@ Title (max 5 words, no quotes, no punctuation at end):"""
 def generate_title_parallel(user_query: str, title_queue: queue.Queue):
     """Generate title in parallel thread for RunnableParallel execution"""
     try:
-        title_model = ChatGoogleGenerativeAI(
-            model="gemini-3-pro-preview",
-            temperature=0.3
-        )
-        
+        mistralai = HuggingFaceEndpoint(
+    		repo_id="meta-llama/Llama-3.1-8B-Instruct",
+    		task="conversational",
+    		temperature=0.3,     # same as before
+    		streaming=True,
+    		huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+	)
+        title_model = ChatHuggingFace(llm=mistralai)
         title_prompt = PromptTemplate(
             input_variables=["query"],
             template="""Generate a concise title (maximum 5 words) for a chat conversation based on this user query: "{query}"
@@ -262,10 +272,14 @@ def stream_answer(memory: ConversationBufferMemory):
     """Streams the assistant's reply token by token using ConversationBufferMemory"""
     try:
         logger.info("Initializing ChatGoogleGenerativeAI model")
-        model = ChatGoogleGenerativeAI(
-            model="gemini-3-pro-preview",
-            temperature=0
-        )
+        mistralai = HuggingFaceEndpoint(
+   		repo_id="meta-llama/Llama-3.1-8B-Instruct",
+    		task="conversational",
+    		temperature=0.3,     # same as before
+    		streaming=True,
+    		huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+	)
+        model = ChatHuggingFace(llm=mistralai)
         logger.info("Starting model stream with ConversationBufferMemory")
         
         # Get the conversation history from memory
@@ -466,6 +480,7 @@ def get_rag_prompt():
     """
     )
     return prompt
+
 
 # ========== AUTHENTICATION ENDPOINTS ==========
 @app.post("/auth/signup", response_model=Token)
@@ -826,11 +841,14 @@ async def chat_stream(request: ChatRequest, current_user: User = Depends(get_cur
 
         rag_prompt = get_rag_prompt()
         logger.info("Initializing ChatGoogleGenerativeAI for RAG")
-        llm = ChatGoogleGenerativeAI(
-            model="gemini-3-pro-preview",
-            temperature=0.5,
-            streaming=True
-        )
+        mistralai = HuggingFaceEndpoint(
+    		repo_id="meta-llama/Llama-3.1-8B-Instruct",
+    		task="conversational",
+    		temperature=0.3,     # same as before
+    		streaming=True,
+    		huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN"),
+	)
+        llm = ChatHuggingFace(llm=mistralai)
         
         chain = rag_prompt | llm
         prompt_input = {'context': context_text, 'question': request.message}

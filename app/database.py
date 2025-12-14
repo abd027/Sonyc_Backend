@@ -7,10 +7,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Database URL from environment variable
+# IMPORTANT: Change the default to your RDS URL!
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/sonyc_db"
+    "postgresql://postgres:abdullah13579@sonyc.cza2q88060bl.eu-north-1.rds.amazonaws.com:5432/sonyc"  # ← CHANGED THIS!
 )
+
+print(f"🔗 Using database: {DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else DATABASE_URL}")
 
 # Create engine
 engine = create_engine(DATABASE_URL, echo=False)
@@ -32,5 +35,3 @@ def get_db():
         raise
     finally:
         db.close()
-
-
