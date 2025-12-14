@@ -1,0 +1,90 @@
+#!/bin/bash
+# Setup script for running Gunicorn as a systemd service on EC2
+
+set -e
+
+echo "🚀 Setting up Gunicorn systemd service for Sonyc Backend..."
+
+# Get the project directory
+PROJECT_DIR="/home/ubuntu/soya-project/Sonyc_Backend/backend"
+SERVICE_NAME="sonyc-backend"
+
+# Check if running as root or with sudo
+if [ "$EUID" -ne 0 ]; then 
+    echo "⚠️  This script needs sudo privileges to install the systemd service."
+    echo "Please run: sudo bash setup-gunicorn-service.sh"
+    exit 1
+fi
+
+# Navigate to backend directory
+cd "$PROJECT_DIR" || { echo "❌ Directory $PROJECT_DIR not found!"; exit 1; }
+
+echo "📦 Checking if gunicorn is installed..."
+
+# Check if virtual environment exists
+if [ -d "venv" ]; then
+    echo "✓ Virtual environment found"
+    VENV_BIN="$PROJECT_DIR/venv/bin"
+    source "$VENV_BIN/activate"
+else
+    echo "⚠️  No virtual environment found. Assuming gunicorn is installed globally."
+    VENV_BIN="/usr/local/bin"
+fi
+
+# Check if gunicorn is installed
+if ! command -v gunicorn &> /dev/null; then
+    echo "❌ Gunicorn not found! Installing..."
+    if [ -f "$VENV_BIN/pip" ]; then
+        "$VENV_BIN/pip" install gunicorn
+    else
+        pip3 install gunicorn
+    fi
+fi
+
+echo "✓ Gunicorn is installed"
+
+# Copy service file to systemd directory
+echo "📝 Installing systemd service file..."
+cp "$SERVICE_NAME.service" /etc/systemd/system/
+
+# Update service file paths (replace placeholder if needed)
+sed -i "s|/home/ubuntu/soya-project/Sonyc_Backend/backend|$PROJECT_DIR|g" /etc/systemd/system/"$SERVICE_NAME.service"
+
+# Update ExecStart with correct gunicorn path
+if [ -f "$VENV_BIN/gunicorn" ]; then
+    sed -i "s|ExecStart=.*|ExecStart=$VENV_BIN/gunicorn app.main:app -c gunicorn_config.py|g" /etc/systemd/system/"$SERVICE_NAME.service"
+elif command -v gunicorn &> /dev/null; then
+    GUNICORN_PATH=$(which gunicorn)
+    sed -i "s|ExecStart=.*|ExecStart=$GUNICORN_PATH app.main:app -c gunicorn_config.py|g" /etc/systemd/system/"$SERVICE_NAME.service"
+fi
+
+# Update Environment PATH
+if [ -d "venv" ]; then
+    sed -i "s|Environment=\"PATH=.*\"|Environment=\"PATH=$VENV_BIN\"|g" /etc/systemd/system/"$SERVICE_NAME.service"
+fi
+
+# Reload systemd daemon
+echo "🔄 Reloading systemd daemon..."
+systemctl daemon-reload
+
+# Enable service to start on boot
+echo "✅ Enabling service to start on boot..."
+systemctl enable "$SERVICE_NAME.service"
+
+echo ""
+echo "✅ Setup complete!"
+echo ""
+echo "📋 To start the service, run:"
+echo "   sudo systemctl start $SERVICE_NAME"
+echo ""
+echo "📋 To check status:"
+echo "   sudo systemctl status $SERVICE_NAME"
+echo ""
+echo "📋 To view logs:"
+echo "   sudo journalctl -u $SERVICE_NAME -f"
+echo ""
+echo "📋 To stop the service:"
+echo "   sudo systemctl stop $SERVICE_NAME"
+echo ""
+echo "📋 To restart the service:"
+echo "   sudo systemctl restart $SERVICE_NAME"

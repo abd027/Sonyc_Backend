@@ -1,0 +1,41 @@
+[Unit]
+Description=Sonyc Backend FastAPI Application
+After=network.target postgresql.service
+Requires=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/soya-project/Sonyc_Backend/backend
+Environment="PATH=/home/ubuntu/soya-project/Sonyc_Backend/backend/venv/bin"
+
+# Load environment variables from .env file
+EnvironmentFile=/home/ubuntu/soya-project/Sonyc_Backend/backend/.env
+
+# Main command
+ExecStart=/home/ubuntu/soya-project/Sonyc_Backend/backend/venv/bin/gunicorn app.main:app -c gunicorn_config.py
+# Alternative if gunicorn is installed globally:
+# ExecStart=/usr/local/bin/gunicorn app.main:app -c gunicorn_config.py
+
+# Reload on configuration changes
+ExecReload=/bin/kill -s HUP $MAINPID
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Resource limits
+LimitNOFILE=65535
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sonyc-backend
+
+[Install]
+WantedBy=multi-user.target
