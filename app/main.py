@@ -68,7 +68,7 @@ app = FastAPI(title="RAG ChatBot API", version="2.0.0")
 
 # CORS middleware
 # Get allowed origins from environment variable or use defaults
-cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://13.49.120.11:3000")
+cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://13.49.120.11:3000,http://13.49.120.11")
 cors_origins = [origin.strip() for origin in cors_origins_env.split(",")]
 
 app.add_middleware(
