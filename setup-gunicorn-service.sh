@@ -68,10 +68,14 @@ elif command -v gunicorn &> /dev/null; then
     sed -i "s|ExecStart=.*|ExecStart=$GUNICORN_PATH app.main:app -c gunicorn_config.py|g" /etc/systemd/system/"$SERVICE_NAME.service"
 fi
 
-# Update Environment PATH
+# Update Environment PATH (include system paths too)
 if [ -d "venv" ]; then
-    sed -i "s|Environment=\"PATH=.*\"|Environment=\"PATH=$VENV_BIN\"|g" /etc/systemd/system/"$SERVICE_NAME.service"
+    sed -i "s|Environment=\"PATH=.*\"|Environment=\"PATH=$VENV_BIN:/usr/local/bin:/usr/bin:/bin\"|g" /etc/systemd/system/"$SERVICE_NAME.service"
 fi
+
+# Make .env file optional (the - prefix makes EnvironmentFile optional)
+sed -i 's|EnvironmentFile=/home/ubuntu/soya-project/Sonyc_Backend/.env|EnvironmentFile=-/home/ubuntu/soya-project/Sonyc_Backend/.env|g' /etc/systemd/system/"$SERVICE_NAME.service" 2>/dev/null || true
+sed -i "s|EnvironmentFile=$PROJECT_DIR/.env|EnvironmentFile=-$PROJECT_DIR/.env|g" /etc/systemd/system/"$SERVICE_NAME.service" 2>/dev/null || true
 
 # Reload systemd daemon
 echo "🔄 Reloading systemd daemon..."

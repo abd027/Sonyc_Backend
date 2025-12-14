@@ -8,10 +8,10 @@ Type=simple
 User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/soya-project/Sonyc_Backend
-Environment="PATH=/home/ubuntu/soya-project/Sonyc_Backend/venv/bin"
+Environment="PATH=/home/ubuntu/soya-project/Sonyc_Backend/venv/bin:/usr/local/bin:/usr/bin:/bin"
 
-# Load environment variables from .env file
-EnvironmentFile=/home/ubuntu/soya-project/Sonyc_Backend/.env
+# Load environment variables from .env file (if it exists)
+EnvironmentFile=-/home/ubuntu/soya-project/Sonyc_Backend/.env
 
 # Main command
 ExecStart=/home/ubuntu/soya-project/Sonyc_Backend/venv/bin/gunicorn app.main:app -c gunicorn_config.py
