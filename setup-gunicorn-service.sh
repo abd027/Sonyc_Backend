@@ -57,20 +57,23 @@ echo "✓ Gunicorn is installed"
 echo "📝 Installing systemd service file..."
 cp "$SERVICE_NAME.service" /etc/systemd/system/
 
-# Update service file paths (replace placeholder if needed)
-sed -i "s|/home/ubuntu/soya-project/Sonyc_Backend[^ ]*|$PROJECT_DIR|g" /etc/systemd/system/"$SERVICE_NAME.service"
+# Update WorkingDirectory path (replace placeholder if needed) - be exact
+sed -i "s|^WorkingDirectory=/home/ubuntu/soya-project/Sonyc_Backend$|WorkingDirectory=$PROJECT_DIR|g" /etc/systemd/system/"$SERVICE_NAME.service"
 
 # Update ExecStart with correct gunicorn path
 if [ -f "$VENV_BIN/gunicorn" ]; then
-    sed -i "s|ExecStart=.*|ExecStart=$VENV_BIN/gunicorn app.main:app -c gunicorn_config.py|g" /etc/systemd/system/"$SERVICE_NAME.service"
+    sed -i "s|ExecStart=.*gunicorn.*|ExecStart=$VENV_BIN/gunicorn app.main:app -c gunicorn_config.py|g" /etc/systemd/system/"$SERVICE_NAME.service"
 elif command -v gunicorn &> /dev/null; then
     GUNICORN_PATH=$(which gunicorn)
-    sed -i "s|ExecStart=.*|ExecStart=$GUNICORN_PATH app.main:app -c gunicorn_config.py|g" /etc/systemd/system/"$SERVICE_NAME.service"
+    sed -i "s|ExecStart=.*gunicorn.*|ExecStart=$GUNICORN_PATH app.main:app -c gunicorn_config.py|g" /etc/systemd/system/"$SERVICE_NAME.service"
 fi
 
-# Update Environment PATH (include system paths too)
+# Update Environment PATH (include system paths too) - match the full line carefully
 if [ -d "venv" ]; then
-    sed -i "s|Environment=\"PATH=.*\"|Environment=\"PATH=$VENV_BIN:/usr/local/bin:/usr/bin:/bin\"|g" /etc/systemd/system/"$SERVICE_NAME.service"
+    # Match the exact pattern to avoid breaking the line
+    sed -i "s|^Environment=\"PATH=/home/ubuntu/soya-project/Sonyc_Backend/venv/bin:/usr/local/bin:/usr/bin:/bin\"$|Environment=\"PATH=$VENV_BIN:/usr/local/bin:/usr/bin:/bin\"|g" /etc/systemd/system/"$SERVICE_NAME.service"
+    # Also handle if it doesn't have the system paths yet
+    sed -i "s|^Environment=\"PATH=/home/ubuntu/soya-project/Sonyc_Backend/venv/bin\"$|Environment=\"PATH=$VENV_BIN:/usr/local/bin:/usr/bin:/bin\"|g" /etc/systemd/system/"$SERVICE_NAME.service"
 fi
 
 # Remove EnvironmentFile line since load_dotenv() handles .env file loading
