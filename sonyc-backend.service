@@ -10,8 +10,8 @@ Group=ubuntu
 WorkingDirectory=/home/ubuntu/soya-project/Sonyc_Backend
 Environment="PATH=/home/ubuntu/soya-project/Sonyc_Backend/venv/bin:/usr/local/bin:/usr/bin:/bin"
 
-# Load environment variables from .env file (if it exists)
-EnvironmentFile=-/home/ubuntu/soya-project/Sonyc_Backend/.env
+# Note: .env file is loaded by load_dotenv() in the Python code, not by systemd
+# This avoids issues if .env is a directory or doesn't exist
 
 # Main command
 ExecStart=/home/ubuntu/soya-project/Sonyc_Backend/venv/bin/gunicorn app.main:app -c gunicorn_config.py
